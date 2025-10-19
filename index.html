@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SOUZA Key Generator</title>
+<style>
+body{font-family:Arial,sans-serif;background:#0b1220;color:#e8eef8;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;padding:16px}
+.card{width:100%;max-width:600px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.04)}
+input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#fff;margin-bottom:8px;resize:none}
+button{padding:10px 16px;border-radius:8px;border:0;background:#6ee7b7;color:#021022;font-weight:700;cursor:pointer;transition:0.2s}
+button:hover{opacity:0.85}
+.row{display:flex;gap:8px}
+label{font-size:13px;color:#bcd;margin-bottom:4px;display:block}
+#out{font-family:monospace;margin-top:12px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="card">
+<h2>Registrar Webhook e Plots</h2>
+<label>Discord Webhook URL</label>
+<input id="webhook" placeholder="https://discord.com/api/webhooks/ID/TOKEN"/>
+<label>Plot UUIDs (1 por linha)</label>
+<textarea id="plots" rows="6" placeholder="Cole os UUIDs aqui, 1 por linha"></textarea>
+<div class="row">
+<button id="btnReg">Registrar & Gerar Key</button>
+<button id="btnTest" style="background:#7c5cff;color:#fff">Testar Notificação</button>
+</div>
+<div id="out"></div>
+</div>
+
+<script>
+const API=window.location.origin;
+
+document.getElementById('btnReg').onclick=async()=>{
+  const webhook=document.getElementById('webhook').value.trim();
+  const plotsRaw=document.getElementById('plots').value.trim();
+  if(!webhook||!plotsRaw){alert('Webhook e plots são necessários');return;}
+  const plots=plotsRaw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const res=await fetch(API+'/register',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({webhook_url:webhook,plots})
+  });
+  const j=await res.json();
+  document.getElementById('out').innerText=j.ok?`Key gerada: ${j.key}\nExpira: ${j.expires_at}`:`Erro: ${j.error||JSON.stringify(j)}`;
+};
+
+document.getElementById('btnTest').onclick=async()=>{
+  const plotsRaw=document.getElementById('plots').value.trim();
+  if(!plotsRaw) return alert('Cole plots para testar');
+  const plot=plotsRaw.split(/\r?\n/)[0].trim();
+  const brainrot=prompt('Nome do brainrot para simular','Dragon Cannelloni');
+  if(!brainrot) return;
+  const res=await fetch(API+'/notify',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plot_id:plot,brainrot,extra:{note:'teste'}})
+  });
+  const j=await res.json();
+  alert(j.ok?`Notificação enviada para ${j.notified} webhook(s)`:`Erro: ${j.error||JSON.stringify(j)}`);
+};
+</script>
+</body>
+</html>
